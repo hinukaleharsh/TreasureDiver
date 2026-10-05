@@ -32,14 +32,14 @@ jobs:
       - name: Set up Emscripten
         uses: emscripten-core/setup-emsdk@v14
 
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
-
       - name: Configure WebAssembly build
         run: emcmake cmake -S . -B build -DPLATFORM=Web -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXECUTABLE_SUFFIX=.html
 
       - name: Build game
         run: cmake --build build --parallel
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
 
       - name: Upload web game
         uses: actions/upload-pages-artifact@v3

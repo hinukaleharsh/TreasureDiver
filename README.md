@@ -53,12 +53,10 @@ Run the game from the directory where you want `save.txt` to be stored. If no sa
 
 ### WebAssembly
 
-The GitHub Actions workflow builds the game for the browser with Emscripten and deploys it to GitHub Pages whenever game or build files change on `main`. To enable it, set the repository's **Settings → Pages → Build and deployment → Source** to **GitHub Actions**. The web build is published at:
+Play the C++ game in a browser at:
 
 <https://hinukaleharsh.github.io/Treasure-Diver/>
 
-### Streamlit
-
-The Streamlit app embeds the WebAssembly build in an iframe. To publish it, deploy `streamlit_app.py` from this repository using [Streamlit Community Cloud](https://share.streamlit.io/), with `requirements.txt` as its dependency file. The game must first be deployed to GitHub Pages. To embed a different game host, set the `TREASURE_DIVER_GAME_URL` environment variable to its URL.
+To publish the browser game, set the repository's **Settings → Pages → Build and deployment → Source** to **GitHub Actions**. The GitHub Actions workflow then builds the C++ game to WebAssembly and deploys it whenever game or build files change on `main`.
 
 Click the game to focus it before using the keyboard controls. Browser progress is stored locally in that browser and is separate from the desktop `save.txt` file.

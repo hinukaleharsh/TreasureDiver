@@ -10,7 +10,7 @@ A small C++ treasure-hunting game built with [raylib](https://www.raylib.com/). 
 - Avoid sharks, jellyfish, and mines; use harpoons to defend yourself from sharks.
 - Return to the surface to sell your loot. Treasure is lost if you die before returning.
 - Spend your earnings on upgrades, then work toward the $3,000 lifetime earnings goal.
-- Your money, upgrades, lifetime earnings, and high score are saved in `save.txt`.
+- Your money, upgrades, lifetime earnings, and high score are saved between sessions. The desktop build uses `save.txt`; the browser build stores progress in browser storage.
 
 ## Controls
 
@@ -30,7 +30,16 @@ A small C++ treasure-hunting game built with [raylib](https://www.raylib.com/). 
 
 ## Build
 
-The project currently has no build-system files. With a MinGW-w64 compiler and raylib installed, run this from the repository root, adjusting the include and library paths for your installation:
+### Desktop
+
+With CMake installed, configure and build from the repository root:
+
+```sh
+cmake -S . -B build
+cmake --build build
+```
+
+Alternatively, with a MinGW-w64 compiler and raylib installed, adjust the include and library paths for your installation:
 
 ```sh
 g++ -std=c++17 src/main.cpp src/Dive.cpp src/Draw.cpp src/Globals.cpp src/Helpers.cpp src/SaveSystem.cpp \
@@ -40,4 +49,16 @@ g++ -std=c++17 src/main.cpp src/Dive.cpp src/Draw.cpp src/Globals.cpp src/Helper
 
 For raylib's bundled Windows `w64devkit`, the include and library paths are typically `C:/raylib/w64devkit/include` and `C:/raylib/w64devkit/lib`.
 
-Run `TreasureDiver.exe` from the directory where you want `save.txt` to be stored. If no save file exists, the game starts with a fresh save.
+Run the game from the directory where you want `save.txt` to be stored. If no save file exists, it starts with a fresh save.
+
+### WebAssembly
+
+The GitHub Actions workflow builds the game for the browser with Emscripten and deploys it to GitHub Pages whenever game or build files change on `main`. To enable it, set the repository's **Settings → Pages → Build and deployment → Source** to **GitHub Actions**. The web build is published at:
+
+<https://hinukaleharsh.github.io/Treasure-Diver/>
+
+### Streamlit
+
+The Streamlit app embeds the WebAssembly build in an iframe. To publish it, deploy `streamlit_app.py` from this repository using [Streamlit Community Cloud](https://share.streamlit.io/), with `requirements.txt` as its dependency file. The game must first be deployed to GitHub Pages. To embed a different game host, set the `TREASURE_DIVER_GAME_URL` environment variable to its URL.
+
+Click the game to focus it before using the keyboard controls. Browser progress is stored locally in that browser and is separate from the desktop `save.txt` file.

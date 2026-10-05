@@ -10,7 +10,7 @@ A small C++ treasure-hunting game built with [raylib](https://www.raylib.com/). 
 - Avoid sharks, jellyfish, and mines; use harpoons to defend yourself from sharks.
 - Return to the surface to sell your loot. Treasure is lost if you die before returning.
 - Spend your earnings on upgrades, then work toward the $3,000 lifetime earnings goal.
-- Your money, upgrades, lifetime earnings, and high score are saved between sessions. The desktop build uses `save.txt`; the browser build stores progress in browser storage.
+- Your money, upgrades, lifetime earnings, and high score are saved in `save.txt`.
 
 ## Controls
 
@@ -30,16 +30,7 @@ A small C++ treasure-hunting game built with [raylib](https://www.raylib.com/). 
 
 ## Build
 
-### Desktop
-
-With CMake installed, configure and build from the repository root:
-
-```sh
-cmake -S . -B build
-cmake --build build
-```
-
-Alternatively, with a MinGW-w64 compiler and raylib installed, adjust the include and library paths for your installation:
+The project currently has no build-system files. With a MinGW-w64 compiler and raylib installed, run this from the repository root, adjusting the include and library paths for your installation:
 
 ```sh
 g++ -std=c++17 src/main.cpp src/Dive.cpp src/Draw.cpp src/Globals.cpp src/Helpers.cpp src/SaveSystem.cpp \
@@ -49,14 +40,4 @@ g++ -std=c++17 src/main.cpp src/Dive.cpp src/Draw.cpp src/Globals.cpp src/Helper
 
 For raylib's bundled Windows `w64devkit`, the include and library paths are typically `C:/raylib/w64devkit/include` and `C:/raylib/w64devkit/lib`.
 
-Run the game from the directory where you want `save.txt` to be stored. If no save file exists, it starts with a fresh save.
-
-### WebAssembly
-
-Play the C++ game in a browser at:
-
-<https://hinukaleharsh.github.io/Treasure-Diver/>
-
-To publish the browser game, set the repository's **Settings → Pages → Build and deployment → Source** to **GitHub Actions**. The GitHub Actions workflow then builds the C++ game to WebAssembly and deploys it whenever game or build files change on `main`.
-
-Click the game to focus it before using the keyboard controls. Browser progress is stored locally in that browser and is separate from the desktop `save.txt` file.
+Run `TreasureDiver.exe` from the directory where you want `save.txt` to be stored. If no save file exists, the game starts with a fresh save.

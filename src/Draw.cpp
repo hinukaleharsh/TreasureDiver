@@ -4,6 +4,7 @@
 #include "raylib.h"
 #include "Globals.h"
 #include "Helpers.h"
+#include "Audio.h"
 
 // ----- small internal helpers, only used inside this file -----
 static void DrawBoat(float x, float y) {
@@ -125,7 +126,8 @@ void DrawDive() {
     if (messageTimer > 0)
         DrawText(message.c_str(), SCREEN_W / 2 - MeasureText(message.c_str(), 22) / 2, SCREEN_H - 60, 22, WHITE);
 
-    DrawText("Arrows/WASD: swim   SHIFT: boost   SPACE: harpoon   Surface = sell", 10, SCREEN_H - 22, 14, Fade(WHITE, 0.6f));
+    DrawText("Arrows/WASD: swim   SHIFT: boost   SPACE: harpoon   Surface = sell   M: mute", 10, SCREEN_H - 22, 14, Fade(WHITE, 0.6f));
+    DrawText(IsAudioMuted() ? "SOUND: OFF" : "SOUND: ON", SCREEN_W - 100, SCREEN_H - 22, 14, IsAudioMuted() ? GRAY : LIME);
 }
 
 void DrawShop() {
@@ -153,6 +155,7 @@ void DrawShop() {
     }
     DrawText(shopMsg.c_str(), 40, 565, 20, YELLOW);
     DrawText("Press ENTER to DIVE!", 40, 598, 28, WHITE);
+    DrawText(IsAudioMuted() ? "SOUND: OFF (M)" : "SOUND: ON (M)", SCREEN_W - 220, 598, 18, IsAudioMuted() ? GRAY : LIME);
 }
 
 void DrawSummary() {

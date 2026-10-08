@@ -21,6 +21,7 @@ A small C++ treasure-hunting game built with [raylib](https://www.raylib.com/). 
 | `Space` | Fire a harpoon |
 | `1`–`5` | Buy the corresponding shop upgrade |
 | `Enter` | Start a dive or continue from the results screen |
+| `M` | Mute or unmute all sound |
 | `R` | Reset the save after winning |
 
 ## Requirements
@@ -33,7 +34,7 @@ A small C++ treasure-hunting game built with [raylib](https://www.raylib.com/). 
 The project currently has no build-system files. With a MinGW-w64 compiler and raylib installed, run this from the repository root, adjusting the include and library paths for your installation:
 
 ```sh
-g++ -std=c++17 src/main.cpp src/Dive.cpp src/Draw.cpp src/Globals.cpp src/Helpers.cpp src/SaveSystem.cpp \
+g++ -std=c++17 src/main.cpp src/Dive.cpp src/Draw.cpp src/Globals.cpp src/Helpers.cpp src/SaveSystem.cpp src/Audio.cpp \
   -I/path/to/raylib/include -L/path/to/raylib/lib -lraylib -lopengl32 -lgdi32 -lwinmm \
   -o TreasureDiver.exe
 ```

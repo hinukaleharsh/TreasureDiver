@@ -6,6 +6,7 @@
 #include "Globals.h"
 #include "Helpers.h"
 #include "SaveSystem.h"
+#include "Audio.h"
 #include "Constants.h"
 
 void StartDive() {
@@ -51,10 +52,14 @@ void StartDive() {
                                    Vector2{RandF(-60, 60), RandF(20, 50)}});
     }
 
+    PlaySfx(SFX_DIVE);
+    StartAmbient();
     state = DIVING;
 }
 
 void EndDive(bool success) {
+    StopAmbient();
+    PlaySfx(success ? SFX_SURFACE : SFX_DEATH);
     lastSuccess = success;
     lastLoot = BagValue();
     for (int i = 0; i < 5; i++) lastBag[i] = bag[i];
@@ -121,6 +126,18 @@ void UpdateDive(float dt) {
     diver.oxygen -= drain * dt;
     if (diver.oxygen <= 0) { diver.oxygen = 0; diver.health -= 8.0f * dt; }
 
+    // ----- Low-oxygen warning beeps -----
+    static float oxygenBeep = 0;
+    bool noOxy  = diver.oxygen <= 0;
+    bool lowOxy = diver.hasDived && !noOxy && diver.oxygen <= maxOxygen * 0.25f;
+    if (noOxy || lowOxy) {
+        oxygenBeep -= dt;
+        if (oxygenBeep <= 0) {
+            PlaySfx(SFX_LOW_OXYGEN, noOxy ? 1.15f : 1.0f);
+            oxygenBeep = noOxy ? 0.4f : 0.9f;
+        }
+    } else oxygenBeep = 0;
+
     if (diver.hitTimer > 0)  diver.hitTimer  -= dt;
     if (messageTimer > 0)    messageTimer    -= dt;
     if (flashTimer > 0)      flashTimer      -= dt;
@@ -131,10 +148,12 @@ void UpdateDive(float dt) {
         if (CheckCollisionCircles(diver.pos, 14, t.pos, TYPES[t.type].radius)) {
             if (BagCount() >= BagCapacity()) {
                 ShowMessage("Bag is full! Head up and sell.", 1.0f);
+                PlaySfx(SFX_BAG_FULL);
             } else {
                 t.taken = true;
                 bag[t.type]++;
                 ShowMessage(std::string("+ ") + TYPES[t.type].name + "  ($" + std::to_string(TYPES[t.type].value) + ")");
+                PlaySfx(SFX_COLLECT, 0.9f + 0.12f * t.type);   // higher value = higher pitch
             }
         }
     }
@@ -150,6 +169,7 @@ void UpdateDive(float dt) {
         if (diver.hitTimer <= 0 && CheckCollisionCircles(diver.pos, 12, s.pos, 24)) {
             diver.health -= 25; diver.hitTimer = 1.5f; flashTimer = 0.3f;
             ShowMessage("Shark bite!", 1.0f);
+            PlaySfx(SFX_HURT);
         }
     }
 
@@ -157,7 +177,7 @@ void UpdateDive(float dt) {
     for (auto& j : jellies) {
         Vector2 p{j.pos.x, j.pos.y + sinf(now + j.phase) * 10.0f};
         if (CheckCollisionCircles(diver.pos, 12, p, 14)) {
-            if (diver.slowTimer <= 0) ShowMessage("Stung! You are slowed.", 1.5f);
+            if (diver.slowTimer <= 0) { ShowMessage("Stung! You are slowed.", 1.5f); PlaySfx(SFX_STING); }
             diver.slowTimer = 3.0f;
         }
     }
@@ -168,6 +188,7 @@ void UpdateDive(float dt) {
             m.active = false;
             diver.health -= 40; flashTimer = 0.5f;
             ShowMessage("BOOM! You hit a mine!", 1.5f);
+            PlaySfx(SFX_EXPLODE);
         }
     }
 
@@ -175,6 +196,7 @@ void UpdateDive(float dt) {
     if (IsKeyPressed(KEY_SPACE) && harpoonsLeft > 0) {
         harpoonsLeft--;
         harpoons.push_back(Harpoon{diver.pos, diver.facing, true});
+        PlaySfx(SFX_HARPOON);
     }
     for (auto& h : harpoons) {
         if (!h.active) continue;
@@ -184,6 +206,7 @@ void UpdateDive(float dt) {
             if (s.alive && h.active && CheckCollisionCircles(h.pos, 6, s.pos, 24)) {
                 s.alive = false; h.active = false;
                 ShowMessage("Shark defeated!", 1.0f);
+                PlaySfx(SFX_SHARK_HIT);
             }
     }
 

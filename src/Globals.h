@@ -33,6 +33,7 @@ extern float messageTimer;
 extern float flashTimer;         // red screen flash when hurt
 extern std::string shopMsg;
 extern bool  hasWon;
+extern int   settingsSel;        // audio settings: 0 = game sound, 1 = music
 
 // results of the last dive (shown on the summary screen)
 extern bool lastSuccess;

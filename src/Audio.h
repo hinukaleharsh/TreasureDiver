@@ -29,9 +29,19 @@ void InitAudio();                               // open the device and build eve
 void CloseAudio();                              // free sounds and close the device
 bool AudioReady();                              // true once a device is available
 void PlaySfx(SfxId id, float pitch = 1.0f);     // play an effect (pitch 1.0 = normal)
-void UpdateAudio();                             // call once per frame (streams the ambience)
-void StartAmbient();                            // begin the looping underwater ambience
-void StopAmbient();                             // stop the ambience
+void UpdateAudio();                             // call once per frame (streams music + water)
+void StartMusic();                              // begin the looping background music
+void StopMusic();                               // stop the background music
+void StartWater();                              // begin the looping underwater ambience
+void StopWater();                               // stop the underwater ambience
 void SetAudioMuted(bool muted);
 bool IsAudioMuted();
 void ToggleAudioMuted();
+
+// Independent volume controls (0.0 .. 1.0), changeable from the settings screen.
+void  SetSfxVolume(float volume);
+float GetSfxVolume();
+void  SetBgmVolume(float volume);    // background music
+float GetBgmVolume();
+void  SetWaterVolume(float volume);  // underwater ambience
+float GetWaterVolume();

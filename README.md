@@ -21,6 +21,7 @@ A small C++ treasure-hunting game built with [raylib](https://www.raylib.com/). 
 | `Space` | Fire a harpoon |
 | `1`–`5` | Buy the corresponding shop upgrade |
 | `Enter` | Start a dive or continue from the results screen |
+| `O` | Open the audio settings (from the shop) |
 | `M` | Mute or unmute all sound |
 | `R` | Reset the save after winning |
 

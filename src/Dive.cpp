@@ -53,12 +53,12 @@ void StartDive() {
     }
 
     PlaySfx(SFX_DIVE);
-    StartAmbient();
+    StartWater();
     state = DIVING;
 }
 
 void EndDive(bool success) {
-    StopAmbient();
+    StopWater();
     PlaySfx(success ? SFX_SURFACE : SFX_DEATH);
     lastSuccess = success;
     lastLoot = BagValue();

@@ -22,10 +22,15 @@ struct SfxVoice {
 };
 
 static SfxVoice g_sfx[SFX_COUNT];
-static Music    g_ambient{};
-static std::vector<unsigned char> g_ambientWav;   // kept alive while the stream reads it
-static bool g_ready  = false;
-static bool g_muted  = false;
+static Music    g_music{};
+static Music    g_water{};
+static std::vector<unsigned char> g_musicWav;     // kept alive while the stream reads it
+static std::vector<unsigned char> g_waterWav;
+static bool  g_ready    = false;
+static bool  g_muted    = false;
+static float g_sfxVol   = 0.8f;
+static float g_musicVol = 0.5f;
+static float g_waterVol = 0.4f;
 
 static inline float RandF01() { return rand() / (float)RAND_MAX; }
 static inline float Clampf(float v, float lo, float hi) { return v < lo ? lo : (v > hi ? hi : v); }
@@ -297,50 +302,97 @@ static std::vector<float> BuildMenu() {
     return b;
 }
 
-// An 8 second seamless loop: a low drone plus a band of soft partials
-// that reads as muffled ocean noise. Every frequency is an exact multiple
-// of 1/duration so the waveform meets cleanly when it repeats.
-static std::vector<float> BuildAmbient() {
-    const float dur = 8.0f;
+static float Midi(float m) { return 440.0f * powf(2.0f, (m - 69.0f) / 12.0f); }
+
+// Soft attack/release envelope so notes fade in and out instead of clicking.
+static float VoiceEnv(float lt, float len, float attack, float release) {
+    if (lt < 0.0f || lt > len) return 0.0f;
+    float a = (lt < attack) ? lt / attack : 1.0f;
+    float r = ((len - lt) < release) ? (len - lt) / release : 1.0f;
+    return a * r;
+}
+
+// A gentle, seamless background tune: a low bass line, sustained chord pads
+// and a simple arpeggio melody, in C major over the progression C - Am - F - G.
+// Every note finishes before the loop point, so the wave meets cleanly.
+static std::vector<float> BuildMusic() {
+    const float beat = 0.60f;              // 100 BPM
+    const float bar  = beat * 4.0f;        // 2.4 s per bar
+    const float dur  = bar * 4.0f;         // 9.6 s loop, four bars
     int n = (int)(kRate * dur);
     std::vector<float> b(n, 0.0f);
 
-    auto addTone = [&](float freq, float amp) {
-        int k = (int)floorf(freq * dur + 0.5f);
-        if (k < 1) k = 1;
-        float f = k / dur;                       // snap to a looping multiple
-        float ph = RandF01() * 2.0f * kPi;
-        for (int i = 0; i < n; i++) { ph += 2.0f * kPi * f / kRate; b[i] += sinf(ph) * amp; }
+    auto addTone = [&](float start, float len, float freq, float amp) {
+        int s = (int)(start * kRate), e = (int)((start + len) * kRate);
+        if (s < 0) s = 0;
+        if (e > n) e = n;
+        float ph = 0.0f;
+        for (int i = s; i < e; i++) {
+            float lt  = i / (float)kRate - start;
+            float env = VoiceEnv(lt, len, 0.03f, 0.30f);
+            ph += 2.0f * kPi * freq / kRate;
+            b[i] += sinf(ph) * amp * env;
+        }
     };
 
-    const float drone[5]  = {55.0f, 82.5f, 110.0f, 165.0f, 220.0f};
-    const float dAmp[5]   = {0.50f, 0.32f, 0.22f, 0.14f, 0.08f};
-    for (int i = 0; i < 5; i++) addTone(drone[i], dAmp[i]);
+    const int bassMidi[4]    = {48, 45, 41, 43};                            // C3 A2 F2 G2
+    const int chords[4][3]   = {{60,64,67},{57,60,64},{53,57,60},{55,59,62}};   // C Am F G
+    const int melody[4][8] = {
+        {72,76,79,76,84,79,76,79},
+        {69,72,76,72,81,76,72,76},
+        {65,69,72,69,77,72,69,72},
+        {67,71,74,71,79,74,71,74},
+    };
 
-    for (int p = 0; p < 48; p++) {               // soft "water" texture
-        float freq = 20.0f + RandF01() * 3200.0f;
-        float amp  = 0.35f / sqrtf(fmaxf(freq, 1.0f));
-        addTone(freq, amp);
-    }
-
-    float lfoPh = 0.0f;
-    float lfoF  = 0.25f;                         // 2 cycles over the loop
-    for (int i = 0; i < n; i++) {
-        lfoPh += 2.0f * kPi * lfoF / kRate;
-        b[i] *= 0.85f + 0.15f * sinf(lfoPh);
-    }
-
-    for (int q = 0; q < 6; q++) {                // occasional bubbles
-        int start = (int)((0.5f + RandF01() * (dur - 1.5f)) * kRate);
-        int len   = (int)(kRate * 0.12f);
-        for (int i = 0; i < len && start + i < n; i++) {
-            float t = i / (float)kRate;
-            float f = 900.0f + 1400.0f * t / 0.12f;   // rising pop
-            b[start + i] += sinf(2.0f * kPi * f * t) * expf(-22.0f * t) * 0.25f;
-        }
+    for (int barIdx = 0; barIdx < 4; barIdx++) {
+        float t0 = barIdx * bar;
+        addTone(t0, bar - 0.15f, Midi(bassMidi[barIdx]), 0.40f);            // bass
+        for (int k = 0; k < 3; k++)                                          // chord pad
+            addTone(t0, bar - 0.20f, Midi(chords[barIdx][k]), 0.09f);
+        for (int e = 0; e < 8; e++)                                          // melody
+            addTone(t0 + e * beat * 0.5f, beat * 0.5f * 0.92f, Midi(melody[barIdx][e]), 0.20f);
     }
 
     Normalize(b, 0.55f);
+    return b;
+}
+
+// A seamless "you are underwater" bed: muffled flow, a low rumble and the
+// occasional bubble. The tail is cross-faded into the head so the loop seam
+// is inaudible.
+static std::vector<float> BuildWater() {
+    const float dur = 6.0f;
+    const int   N   = (int)(kRate * dur);
+    const int   X   = (int)(kRate * 0.5f);     // cross-fade length
+    std::vector<float> raw(N + X, 0.0f);
+
+    float lp = 0.0f, lp2 = 0.0f;
+    for (int i = 0; i < N + X; i++) {
+        float t  = i / (float)kRate;
+        float nz = RandF01() * 2.0f - 1.0f;
+        lp  += 0.030f * (nz - lp);             // watery hiss
+        lp2 += 0.004f * (nz - lp2);            // deep rumble
+        float swell = 0.8f + 0.2f * sinf(2.0f * kPi * 0.18f * t);
+        raw[i] = (lp * 0.55f + lp2 * 1.6f) * swell;
+    }
+
+    for (int q = 0; q < 10; q++) {              // bubbles, kept away from the seam
+        int start = (int)((0.3f + RandF01() * (dur - 1.0f)) * kRate);
+        int len   = (int)(kRate * 0.1f);
+        float f0  = 700.0f + RandF01() * 900.0f;
+        for (int i = 0; i < len && start + i < N + X; i++) {
+            float t = i / (float)kRate;
+            float f = f0 + 1600.0f * (t / 0.1f);
+            raw[start + i] += sinf(2.0f * kPi * f * t) * expf(-26.0f * t) * 0.22f;
+        }
+    }
+
+    std::vector<float> b(raw.begin(), raw.begin() + N);
+    for (int i = 0; i < X; i++) {               // blend the tail into the head
+        float t = i / (float)X;
+        b[N - X + i] = raw[N - X + i] * (1.0f - t) + raw[i] * t;
+    }
+    Normalize(b, 0.5f);
     return b;
 }
 
@@ -408,10 +460,15 @@ void InitAudio() {
         for (int i = 0; i < kVoices; i++) v.voices[i] = LoadSoundAlias(v.base);
     }
 
-    AppendWav(g_ambientWav, BuildAmbient());
-    g_ambient = LoadMusicStreamFromMemory(".wav", g_ambientWav.data(), (int)g_ambientWav.size());
-    g_ambient.looping = true;
-    SetMusicVolume(g_ambient, 0.35f);
+    AppendWav(g_musicWav, BuildMusic());
+    g_music = LoadMusicStreamFromMemory(".wav", g_musicWav.data(), (int)g_musicWav.size());
+    g_music.looping = true;
+    SetMusicVolume(g_music, g_musicVol);
+
+    AppendWav(g_waterWav, BuildWater());
+    g_water = LoadMusicStreamFromMemory(".wav", g_waterWav.data(), (int)g_waterWav.size());
+    g_water.looping = true;
+    SetMusicVolume(g_water, g_waterVol);
 
     SetMasterVolume(g_muted ? 0.0f : 0.9f);
 }
@@ -422,8 +479,10 @@ void CloseAudio() {
         for (int i = 0; i < kVoices; i++) UnloadSoundAlias(g_sfx[id].voices[i]);
         UnloadSound(g_sfx[id].base);
     }
-    UnloadMusicStream(g_ambient);
-    g_ambientWav.clear();
+    UnloadMusicStream(g_music);
+    UnloadMusicStream(g_water);
+    g_musicWav.clear();
+    g_waterWav.clear();
     CloseAudioDevice();
     g_ready = false;
 }
@@ -436,22 +495,35 @@ void PlaySfx(SfxId id, float pitch) {
     SfxVoice& v = g_sfx[id];
     Sound& s = v.voices[v.next];
     v.next = (v.next + 1) % kVoices;
+    SetSoundVolume(s, g_sfxVol);
     SetSoundPitch(s, pitch);
     PlaySound(s);
 }
 
 void UpdateAudio() {
-    if (g_ready && IsMusicStreamPlaying(g_ambient)) UpdateMusicStream(g_ambient);
+    if (!g_ready) return;
+    if (IsMusicStreamPlaying(g_music)) UpdateMusicStream(g_music);
+    if (IsMusicStreamPlaying(g_water)) UpdateMusicStream(g_water);
 }
 
-void StartAmbient() {
+void StartMusic() {
     if (!g_ready) return;
-    PlayMusicStream(g_ambient);
+    PlayMusicStream(g_music);
 }
 
-void StopAmbient() {
+void StopMusic() {
     if (!g_ready) return;
-    StopMusicStream(g_ambient);
+    StopMusicStream(g_music);
+}
+
+void StartWater() {
+    if (!g_ready) return;
+    PlayMusicStream(g_water);
+}
+
+void StopWater() {
+    if (!g_ready) return;
+    StopMusicStream(g_water);
 }
 
 void SetAudioMuted(bool muted) {
@@ -462,3 +534,23 @@ void SetAudioMuted(bool muted) {
 bool IsAudioMuted() { return g_muted; }
 
 void ToggleAudioMuted() { SetAudioMuted(!g_muted); }
+
+void SetSfxVolume(float volume) {
+    g_sfxVol = Clampf(volume, 0.0f, 1.0f);
+}
+
+float GetSfxVolume() { return g_sfxVol; }
+
+void SetBgmVolume(float volume) {
+    g_musicVol = Clampf(volume, 0.0f, 1.0f);
+    if (g_ready) SetMusicVolume(g_music, g_musicVol);
+}
+
+float GetBgmVolume() { return g_musicVol; }
+
+void SetWaterVolume(float volume) {
+    g_waterVol = Clampf(volume, 0.0f, 1.0f);
+    if (g_ready) SetMusicVolume(g_water, g_waterVol);
+}
+
+float GetWaterVolume() { return g_waterVol; }

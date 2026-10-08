@@ -23,6 +23,7 @@ float messageTimer = 0;
 float flashTimer   = 0;
 std::string shopMsg;
 bool  hasWon = false;
+int   settingsSel = 0;
 
 bool lastSuccess = false;
 int  lastLoot = 0, lastDepthBonus = 0, lastSurvival = 0, lastRareBonus = 0, lastScore = 0;

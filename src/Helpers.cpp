@@ -31,7 +31,13 @@ Color LerpColor(Color a, Color b, float t) {
 }
 
 Color WaterColor(float depthM) {
-    return LerpColor(Color{70, 175, 225, 255}, Color{3, 10, 30, 255}, Clamp01(depthM / MAX_DEPTH_M));
+    // Ocean gradient: sunlit turquoise -> vivid blue -> deep navy.
+    float f = Clamp01(depthM / MAX_DEPTH_M);
+    const Color surface = Color{52, 190, 235, 255};
+    const Color mid     = Color{14, 96, 200, 255};
+    const Color deep    = Color{2, 16, 58, 255};
+    if (f < 0.5f) return LerpColor(surface, mid, f / 0.5f);
+    return LerpColor(mid, deep, (f - 0.5f) / 0.5f);
 }
 
 void ShowMessage(const std::string& s, float secs) { message = s; messageTimer = secs; }

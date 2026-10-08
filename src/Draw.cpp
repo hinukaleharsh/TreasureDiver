@@ -138,6 +138,7 @@ void DrawShop() {
     DrawText("TREASURE DIVER", 40, 24, 44, WHITE);
     DrawText(TextFormat("Money: $%d", save.money), 40, 84, 26, GOLD);
     DrawText(TextFormat("High score: %d", save.highScore), 260, 90, 20, WHITE);
+    DrawText("[O] Audio settings", 540, 90, 20, LIGHTGRAY);
 
     DrawText(TextFormat("Goal: earn $%d in total  (%d / %d)", WIN_TARGET, save.totalEarned, WIN_TARGET), 40, 140, 18, WHITE);
     DrawRectangle(40, 166, 420, 14, Fade(BLACK, 0.4f));
@@ -191,4 +192,36 @@ void DrawWon() {
     DrawText(TextFormat("You earned $%d in treasure. You are a legendary diver!", save.totalEarned), 60, 210, 24, WHITE);
     DrawText(TextFormat("Best dive score: %d", save.highScore), 60, 260, 24, LIME);
     DrawText("ENTER = keep playing        R = reset save and start over", 60, 380, 22, LIGHTGRAY);
+}
+
+static void DrawVolumeRow(int y, const char* label, int value, bool selected) {
+    DrawRectangle(60, y, SCREEN_W - 120, 72, selected ? Fade(SKYBLUE, 0.22f) : Fade(BLACK, 0.35f));
+    if (selected) DrawRectangleLines(60, y, SCREEN_W - 120, 72, SKYBLUE);
+
+    DrawText(label, 84, y + 10, 24, selected ? WHITE : LIGHTGRAY);
+
+    int sx = 84, sy = y + 46, sw = SCREEN_W - 280, sh = 14;
+    DrawRectangle(sx, sy, sw, sh, Fade(WHITE, 0.15f));
+    int fill = (int)(sw * (value / 100.0f));
+    DrawRectangle(sx, sy, fill, sh, selected ? LIME : GREEN);
+    DrawCircle(sx + fill, sy + sh / 2, 9, WHITE);
+
+    DrawText(TextFormat("%d%%", value), sx + sw + 28, y + 34, 26, selected ? GOLD : GRAY);
+}
+
+void DrawSettings() {
+    DrawRectangleGradientV(0, 0, SCREEN_W, SCREEN_H, Color{20, 32, 62, 255}, Color{4, 8, 20, 255});
+    DrawText("AUDIO SETTINGS", 60, 50, 44, WHITE);
+    DrawRectangle(60, 104, SCREEN_W - 120, 3, Fade(WHITE, 0.5f));
+
+    DrawVolumeRow(140, "Game Sound Effects", save.sfxVol,   settingsSel == 0);
+    DrawVolumeRow(230, "Background Music",   save.musicVol, settingsSel == 1);
+    DrawVolumeRow(320, "Water Ambience",     save.waterVol, settingsSel == 2);
+
+    DrawText(IsAudioMuted() ? "All sound is currently MUTED" : "Sound is ON",
+             60, 416, 22, IsAudioMuted() ? RED : LIME);
+
+    DrawText("UP / DOWN: choose        LEFT / RIGHT: adjust        M: mute all",
+             60, SCREEN_H - 100, 20, LIGHTGRAY);
+    DrawText("Press ENTER or O to return to the shop", 60, SCREEN_H - 62, 22, WHITE);
 }

@@ -23,7 +23,7 @@ inline const TreasureType TYPES[5] = {
     {"Lost Crown",    500, 550, RED,     16},
 };
 
-enum State   { SHOP, DIVING, SUMMARY, WON };
+enum State   { SHOP, DIVING, SUMMARY, WON, SETTINGS };
 enum Upgrade { UP_OXYGEN, UP_FINS, UP_BAG, UP_LIGHT, UP_HARPOON, UP_COUNT };
 
 struct UpgradeDef {
@@ -63,4 +63,7 @@ struct SaveData {
     int totalEarned = 0;
     int highScore   = 0;
     int level[UP_COUNT] = {0, 0, 0, 0, 0};
+    int sfxVol      = 80;    // game sound effects volume, 0..100
+    int musicVol    = 50;    // background music volume, 0..100
+    int waterVol    = 40;    // underwater ambience volume, 0..100
 };
